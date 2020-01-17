@@ -5,37 +5,53 @@
 using node = ideaeclipse_utils::binomial_heap::node;
 using binomial_heap = ideaeclipse_utils::binomial_heap;
 
+node * init_node(const unsigned int order, const unsigned int priority) {
+  node *_new = new node();
+
+  _new->order = order;
+  _new->priority = priority;
+
+  return _new;
+}
+
 int main(void) {
-  node *tree1 = new node();
+				/*
+  std::map<unsigned int, node*> forest_one;
 
-  tree1->order = 0;
-  tree1->priority = 1;
+	for(int i = 0; i < 6; i ++) forest_one.insert(std::make_pair(i, init_node(i, 1)));
 
-  /*
-  node *child1 = new node();
-  child1->parent = tree1;
-  tree1->child = child1;
-  */
+  std::map<unsigned int, node*> forest_two;
 
-  node *tree2 = new node();
-  tree2->order = 0;
-  tree2->priority = 2;
+  forest_two.insert(std::make_pair(0, init_node(0, 1)));
+	//forest_two.insert(std::make_pair(3, init_node(3, 1)));
 
-  /*
-  node *child2 = new node();
-  child2->parent = tree2;
-  tree2->child = child2;
-  */
+  binomial_heap heap(forest_two);
 
-  printf("Tree1: %p, Tree2: %p\n", tree1, tree2);
+  heap.merge(forest_one);
 
-  binomial_heap heap;
-  heap._merge(tree1, tree2);
+  std::cout << "Trees exist at the following indexes in the heap:" << std::endl;
 
-  printf("Root: %p, child: %p, childs parent: %p\n", tree2, tree2->child, tree2->child->parent);
+  for(auto &x: heap.forest) {
+    std::cout << x.first << std::endl;
+  }
+	*/
 
-  delete tree1;
-  delete tree2;
+	binomial_heap heap;
+
+	for(int i = 0; i < 100; i ++){
+		heap.insert(i);
+	}
+
+	heap.print_trees();
+
+	std::cout << "max priority: " << heap.get_max_priority() << std::endl;
+
+	node * sixth_tree = heap.forest.at(6);
+
+	while(sixth_tree != nullptr){
+		std::cout << sixth_tree->order << ":" << sixth_tree->priority << std::endl;
+		sixth_tree = sixth_tree->child;
+	}
 
   return 0;
 }

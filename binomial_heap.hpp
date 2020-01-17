@@ -1,7 +1,8 @@
 #ifndef BINOMIAL_HEAP_HPP
 #define BINOMIAL_HEAP_HPP
 
-#include <unordered_map>
+#include <map>
+#include <iostream>
 
 namespace ideaeclipse_utils {
 class binomial_heap {
@@ -18,68 +19,124 @@ public:
     node() : parent(nullptr), child(nullptr), sibling(nullptr) {}
   };
 
-  node * head = nullptr;
+  std::map<unsigned int, node*> forest;
 
 public:
 
+  binomial_heap() {}
+
+  binomial_heap(const std::map<unsigned int, node*> &pre_set) : forest(pre_set) {}
+
   void insert(const unsigned int priority) {
-    node * _new = new node();
+    node *_new = new node();
 
     _new->order = 0;
     _new->priority = priority;
 
-    this->merge(_new);
+    std::map<unsigned int, node*> new_map;
+    new_map.insert(std::make_pair(0, _new));
+
+    this->merge(new_map);
   }
 
-  /*
-   * Cases:
-   *
-   * Carry Over exists:
-   * 	outdated:
-   * 		loop until either there is no carry over or the carry over is the same rank as the next tree in the queue.
-   * 			conflict with heap tree:
-   * 				merge to produce new carry over.
-   * 			no-conflict:
-   * 				insert carry over at position. Break out of loop. As there can not be a carry over produced.
-   * 	not outdated:
-   * 		conflict:
-   * 			merge the trees at the current order in the heap and in the to_merge forest. Then insert the carry over at that rank in the heap.
-   * 		no-conflict:
-   * 			conflict with heap:
-   * 				merge with heap tree to produce new carry over
-   * 			no conflict with heap:
-   * 				insert into heap.
-   *
-   * Carry over doesn't exist:
-   * 	conflict:
-   * 		merge both the current tree in the heap with the same ordered tree in the forest to merger produces carry over.
-   * 	no conflict:
-   * 		insert the to_merge tree into the heaps forest.
-   *
-   *
-   */
-  void merge(node *to_merge) {
 
-    if(this->head == nullptr) this->head = to_merge;
-    else {
-      node * current_heap_pos = this->head;
-      node * carry_over = nullptr;
-      for(node * curr = to_merge; curr != nullptr; curr = curr->sibling) {
-        if(carry_over != nullptr) {
+  void merge(const std::map<unsigned int, node*> &to_merge) {
+    std::pair<unsigned int, node*> carry_over_pair = this->_make_null_pair();
 
+    for(auto &pair: to_merge) {
+      const unsigned int current_order = pair.first;
+      node *current_tree = pair.second;
+
+      std::cout << "Current order: " << current_order << std::endl;
+
+      if(carry_over_pair.second == nullptr) {
+
+        std::cout << "No carry over" << std::endl;
+
+        if(this->forest.count(current_order)) { // collision has occured and thus we merged the two trees and set carry over to their product
+          std::cout << "Merge" << std::endl;
+
+          node *co = this->_merge(this->forest.at(current_order), current_tree);
+          this->forest.erase(current_order);
+          carry_over_pair.first = current_order + 1;
+          carry_over_pair.second = co;
+        } else { // No carry over and no collision thus you can freely insert into the tree
+          std::cout << "Insert" << std::endl;
+          this->forest.insert(std::make_pair(current_order, current_tree));
+        }
+      } else { // Carr over exists.
+
+        std::cout << "Carry over exists" << std::endl;
+
+        unsigned int carry_over_order = carry_over_pair.first;
+        node * carry_over_tree = carry_over_pair.second;
+
+        bool finished = false;
+
+        if(carry_over_order < current_order) std::cout << "Outdated" << std::endl;
+
+        // Loop through all the bounds between the carry_over and the current tree.
+        // Either merge them together into a new carry over if there is a conflict
+        // or insert it and break the loop.
+        while(carry_over_order < current_order) {
+          if(this->forest.count(carry_over_order)) {
+            std::cout << "Merge at order: " << carry_over_order << std::endl;
+            carry_over_tree = this->_merge(carry_over_tree, this->forest.at(carry_over_order));
+            this->forest.erase(carry_over_order);
+            carry_over_order += 1;
+          } else {
+            std::cout << "Insert" << std::endl;
+            this->forest.insert(std::make_pair(carry_over_order, carry_over_tree));
+            carry_over_pair = this->_make_null_pair();
+            finished = true;
+            break;
+          }
+        }
+
+        // If finished is true we need to continue the outer loop
+        if(finished) continue;
+        else if(carry_over_order == current_order) { // Just ensures that they are the same. They should always be the same
+          std::cout << "Carry over is up to date with current_order of: " << current_order << std::endl;
+          if(this->forest.count(current_order)) {
+            std::cout << "Merge current and tree in forest" << std::endl;
+            node *new_merge = this->_merge(current_tree, this->forest.at(current_order));
+            this->forest.insert(std::make_pair(current_order, carry_over_tree));
+            carry_over_pair.first = current_order + 1;
+            carry_over_pair.second = new_merge;
+          } else {
+            std::cout << "Merge carry with current" << std::endl;
+            carry_over_pair.first = current_order + 1;
+            carry_over_pair.second = this->_merge(current_tree, carry_over_tree);
+          }
         } else {
-          if(curr->order == current_heap_pos->order) {
-            carry_over = this->_merge(curr, current_heap_pos);
-          }else{
-						if(curr->order > current_heap_pos->order){
-							//TODO: Figure out this case.
-						}else{
-							
-						}
-					}
+          std::cout << "This shouldn't occur" << std::endl;
         }
       }
     }
+
+    if(carry_over_pair.second != nullptr) {
+
+      std::cout << "Carry over exists after all to_merged trees after been looked after" << std::endl;
+
+      unsigned int carry_over_order = carry_over_pair.first;
+      node * carry_over_tree = carry_over_pair.second;
+
+      while(true) {
+        if(this->forest.count(carry_over_order)) {
+          carry_over_tree = this->_merge(this->forest.at(carry_over_order), carry_over_tree);
+          this->forest.erase(carry_over_order);
+          carry_over_order += 1;
+        } else {
+          this->forest.insert(std::make_pair(carry_over_order, carry_over_tree));
+          break;
+        }
+      }
+
+    }
+  }
+
+  std::pair<unsigned int, node *> _make_null_pair() {
+    return std::make_pair(-1, nullptr);
   }
 
   node* _merge(node *tree1, node *tree2) {
@@ -100,8 +157,25 @@ public:
     }
   }
 
+  int get_max_priority() {
+    unsigned int max_priority = 0;
+    for(auto &x: this->forest) if(x.second->priority > max_priority) max_priority = x.second->priority;
+
+    return max_priority;
+  }
+
+  void print_trees() {
+    for(auto &x : this->forest) std::cout << x.first << std::endl;
+  }
+
   void del(const unsigned int priority) {
 
+  }
+
+  ~binomial_heap() {
+    std::cout << "Delete" << std::endl;
+
+    for(auto &x: this->forest) delete x.second;
   }
 };
 }
