@@ -5,15 +5,6 @@
 using node = ideaeclipse_utils::binomial_heap::node;
 using binomial_heap = ideaeclipse_utils::binomial_heap;
 
-node * init_node(const unsigned int order, const unsigned int priority) {
-  node *_new = new node();
-
-  _new->order = order;
-  _new->priority = priority;
-
-  return _new;
-}
-
 int main(void) {
   /*
   std::map<unsigned int, node*> forest_one;
