@@ -157,19 +157,43 @@ public:
     }
   }
 
-  int get_max_priority() {
+  int get_max() {
     unsigned int max_priority = 0;
     for(auto &x: this->forest) if(x.second->priority > max_priority) max_priority = x.second->priority;
-
     return max_priority;
   }
 
+	int extract_max(){
+		node * max_node = nullptr;
+		for(auto &x: this->forest){
+			if(max_node == nullptr) max_node = x.second;
+			else if(x.second->priority > max_node->priority) max_node = x.second;
+		}
+
+		int max = max_node->priority;
+
+		std::map<unsigned int, node*> new_map;
+
+		node * child = max_node->child;
+
+		while(child != nullptr){
+			child->parent = nullptr;
+			new_map.insert(std::make_pair(child->order, child));
+			child = child->sibling;
+		}	
+
+		this->forest.erase(max_node->order);
+
+		delete max_node;	
+
+		this->merge(new_map);
+
+		return max;
+
+	}
+
   void print_trees() {
     for(auto &x : this->forest) std::cout << x.first << std::endl;
-  }
-
-  void del(const unsigned int priority) {
-
   }
 
   ~binomial_heap() {
