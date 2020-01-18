@@ -270,8 +270,6 @@ public:
       std::size_t counter = 0;
       node *max_child = max_node->child;
 
-      delete max_node;
-
       while(max_child != nullptr) {
         max_child->parent = nullptr;
         children[counter++] = max_child;
@@ -286,6 +284,8 @@ public:
 
       this->merge(children[number_of_children - 1]);
     }
+
+    delete max_node;
 
     return max_data;
   }
