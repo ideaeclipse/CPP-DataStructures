@@ -1,205 +1,318 @@
 #ifndef BINOMIAL_HEAP_HPP
 #define BINOMIAL_HEAP_HPP
 
-#include <map>
 #include <iostream>
 
 namespace ideaeclipse_utils {
+/*
+ * Max binomial heap implmentation of type T
+ *
+ * All functions are implemented in logarithmic time.
+ * The functionality is the same as a max heap but allows for the union of two heaps.
+ */
+template<typename T>
 class binomial_heap {
-public:
-
+private:
+	
+	/*
+	 * Internal data structure for each node within the graph
+	 */
   struct node {
-    unsigned int priority;
+    
+		// Priority of the node. Higher the priority the sooner it is released from the heap
+		const unsigned int priority;
+
+		// Data associated with the node. User defined.
+    const T data;
+
+		// Degree of the tree. See the definition of a binomial tree for more info.
     unsigned int order;
 
-    node * parent;
-    node * child;
-    node * sibling;
+		// Parent pointer. If a node is a root node this is null.
+    node * parent = nullptr;
 
-    node() : parent(nullptr), child(nullptr), sibling(nullptr) {}
+		// Child pointer. Points to the left most child.
+    node * child = nullptr;
+
+		// Sibling pointer. Points to the child to the right.
+    node * sibling = nullptr;
+
+		/*
+		 * @param priority sets the priority.
+		 * @param order sets the default order. Should be 0
+		 */
+    node(const int priority, const T &data) : priority(priority), data(data), order(0) {}
   };
 
-  std::map<unsigned int, node*> forest;
+	/*
+	 * Takes the child node. Loops through all siblings and makes a recursive call.
+	 *
+	 * @param root frees the tree with a root node.
+	 */
+  void free_tree(node *root) {
+    node *child = root->child;
+    while(child != nullptr) {
+      this->free_tree(child);
+      delete child;
+      child = child->sibling;
+    }
+  }
+
+	/*
+	 * Similiar to free_tree but prints the priority and order
+	 *
+	 * @param root root node for the tree
+	 */
+  void print_tree(node *root) {
+    if(root == nullptr) return;
+
+    node *child = root->child;
+    node *ref = child;
+    while(child != nullptr) {
+      std::cout << child->priority << ":" << child->order << " ";
+      child = child->sibling;
+    }
+    std::cout << "\n";
+    this->print_tree(ref);
+  }
+
+	/*
+	 * Links the trees together.
+	 *
+	 * @param tree1 higher priority tree
+	 * @param tree2 lower priority tree
+	 */
+  void link(node *tree1, node *tree2) {
+    tree2->parent = tree1;
+    tree2->sibling = tree1->child;
+    tree1->child = tree2;
+    tree1->order++;
+  }
+
+	/*
+	 * Merges two heaps.
+	 *
+	 * @param merg heap to merg
+	 */
+  void merge(node *merge) {
+    if(this->head == nullptr) {
+      this->head = merge;
+      return;
+    }
+
+    node * curr_heap = this->head;
+    node * merge_heap = merge;
+    node * new_heap = nullptr;
+    node * new_heap_root = nullptr;
+
+    // Set the new_heap to which ever heap starts earlier
+    if(curr_heap->order <= merge_heap->order) {
+      new_heap = curr_heap;
+      curr_heap = curr_heap->sibling;
+    } else {
+      new_heap = merge_heap;
+      merge_heap = merge_heap->sibling;
+    }
+
+    new_heap_root = new_heap;
+
+    // Order the list so that the trees of less order are in order from the head to the end.
+    while(curr_heap != nullptr && merge_heap != nullptr) {
+      if(curr_heap->order <= merge_heap->order) {
+        new_heap->sibling = curr_heap;
+        curr_heap = curr_heap->sibling;
+      } else {
+        new_heap->sibling = merge_heap;
+        merge_heap = merge_heap->sibling;
+      }
+
+      new_heap = new_heap->sibling;
+    }
+
+
+    // Add the remaining trees in the current heap if any.
+    if(curr_heap != nullptr) {
+      while(curr_heap != nullptr) {
+        new_heap->sibling = curr_heap;
+        curr_heap = curr_heap->sibling;
+        new_heap = new_heap->sibling;
+      }
+    } else if(merge_heap != nullptr) {
+      while(merge_heap != nullptr) {
+        new_heap->sibling = merge_heap;
+        merge_heap = merge_heap->sibling;
+        new_heap = new_heap->sibling;
+      }
+    }
+
+    // Reset the new_heap to its root node.
+    new_heap = new_heap_root;
+
+    node *previous = nullptr;
+    node *next = new_heap->sibling;
+
+    while(next != nullptr) {
+      // If the two adjacent trees are of the same order then skip
+      // If the next three trees are of the same degree then skip
+      if((new_heap->order != next->order) || (next->sibling != nullptr && new_heap->order == next->sibling->order)) {
+        previous = new_heap;
+        new_heap = next;
+      } else {
+
+        /*
+         * This function merges the two trees based on which one has a higher priority
+				 * TODO: explain
+         */
+        if(new_heap->priority >= next->priority) {
+          new_heap->sibling = next->sibling;
+          this->link(new_heap, next);
+        } else {
+          if(previous == nullptr) {
+            new_heap_root = next;
+          } else {
+            previous->sibling = next;
+          }
+
+          this->link(next, new_heap);
+          new_heap = next;
+        }
+      }
+      next = new_heap->sibling;
+    }
+
+    this->head = new_heap_root;
+  }
+
+	// Head of the heap
+  node *head = nullptr;
 
 public:
 
-  binomial_heap() {}
-
-  binomial_heap(const std::map<unsigned int, node*> &pre_set) : forest(pre_set) {}
-
-  void insert(const unsigned int priority) {
-    node *_new = new node();
-
-    _new->order = 0;
-    _new->priority = priority;
-
-    std::map<unsigned int, node*> new_map;
-    new_map.insert(std::make_pair(0, _new));
-
-    this->merge(new_map);
+	/*
+	 * Merges a singleton node with the heap.
+	 *
+	 * @param data user data
+	 * @param priority priority of that data
+	 */
+  void insert(const T &data, const unsigned int priority = 0) {
+    this->merge(new node(priority, data));
   }
 
+	/*
+	 * @param heap heap to merge
+	 */
+  void merge(binomial_heap<T> &heap) {
+    this->merge(heap.head);
+    heap.head = nullptr;
+  }
 
-  void merge(const std::map<unsigned int, node*> &to_merge) {
-    std::pair<unsigned int, node*> carry_over_pair = this->_make_null_pair();
+	/*
+	 * @param heap heap to merge
+	 */
+  void merge(binomial_heap<T> &&heap) {
+    this->merge(heap.head);
+    heap.head = nullptr;
+  }
 
-    for(auto &pair: to_merge) {
-      const unsigned int current_order = pair.first;
-      node *current_tree = pair.second;
+	/*
+	 * @return max element
+	 */
+  const T& get_max() {
+    node *max = nullptr;
 
-      std::cout << "Current order: " << current_order << std::endl;
+    node *ref = this->head;
 
-      if(carry_over_pair.second == nullptr) {
-
-        std::cout << "No carry over" << std::endl;
-
-        if(this->forest.count(current_order)) { // collision has occured and thus we merged the two trees and set carry over to their product
-          std::cout << "Merge" << std::endl;
-
-          node *co = this->_merge(this->forest.at(current_order), current_tree);
-          this->forest.erase(current_order);
-          carry_over_pair.first = current_order + 1;
-          carry_over_pair.second = co;
-        } else { // No carry over and no collision thus you can freely insert into the tree
-          std::cout << "Insert" << std::endl;
-          this->forest.insert(std::make_pair(current_order, current_tree));
-        }
-      } else { // Carr over exists.
-
-        std::cout << "Carry over exists" << std::endl;
-
-        unsigned int carry_over_order = carry_over_pair.first;
-        node * carry_over_tree = carry_over_pair.second;
-
-        bool finished = false;
-
-        if(carry_over_order < current_order) std::cout << "Outdated" << std::endl;
-
-        // Loop through all the bounds between the carry_over and the current tree.
-        // Either merge them together into a new carry over if there is a conflict
-        // or insert it and break the loop.
-        while(carry_over_order < current_order) {
-          if(this->forest.count(carry_over_order)) {
-            std::cout << "Merge at order: " << carry_over_order << std::endl;
-            carry_over_tree = this->_merge(carry_over_tree, this->forest.at(carry_over_order));
-            this->forest.erase(carry_over_order);
-            carry_over_order += 1;
-          } else {
-            std::cout << "Insert" << std::endl;
-            this->forest.insert(std::make_pair(carry_over_order, carry_over_tree));
-            carry_over_pair = this->_make_null_pair();
-            finished = true;
-            break;
-          }
-        }
-
-        // If finished is true we need to continue the outer loop
-        if(finished) continue;
-        else if(carry_over_order == current_order) { // Just ensures that they are the same. They should always be the same
-          std::cout << "Carry over is up to date with current_order of: " << current_order << std::endl;
-          if(this->forest.count(current_order)) {
-            std::cout << "Merge current and tree in forest" << std::endl;
-            node *new_merge = this->_merge(current_tree, this->forest.at(current_order));
-            this->forest.insert(std::make_pair(current_order, carry_over_tree));
-            carry_over_pair.first = current_order + 1;
-            carry_over_pair.second = new_merge;
-          } else {
-            std::cout << "Merge carry with current" << std::endl;
-            carry_over_pair.first = current_order + 1;
-            carry_over_pair.second = this->_merge(current_tree, carry_over_tree);
-          }
-        } else {
-          std::cout << "This shouldn't occur" << std::endl;
-        }
-      }
+    while(ref != nullptr) {
+      if(max == nullptr || ref->priority > max->priority) max = ref;
+      ref = ref->sibling;
     }
+    return max->data;
+  }
 
-    if(carry_over_pair.second != nullptr) {
+	/*
+	 * Gets the max data and removes it from the heap.
+	 *
+	 * @return data from the max node
+	 */
+  const T extract_max() {
+    node * max_previous = nullptr;
+    node * max_node = nullptr;
 
-      std::cout << "Carry over exists after all to_merged trees after been looked after" << std::endl;
+    node *ref_previous = nullptr;
+    node *ref = this->head;
 
-      unsigned int carry_over_order = carry_over_pair.first;
-      node * carry_over_tree = carry_over_pair.second;
-
-      while(true) {
-        if(this->forest.count(carry_over_order)) {
-          carry_over_tree = this->_merge(this->forest.at(carry_over_order), carry_over_tree);
-          this->forest.erase(carry_over_order);
-          carry_over_order += 1;
-        } else {
-          this->forest.insert(std::make_pair(carry_over_order, carry_over_tree));
-          break;
-        }
+		/*
+		 * Find the max node and the node before it.
+		 */
+    while(ref != nullptr) {
+      if(max_node == nullptr || ref->priority > max_node->priority) {
+        max_node = ref;
+        max_previous = ref_previous;
       }
 
+      ref_previous = ref;
+      ref = ref->sibling;
+    }
+
+		/*
+		 * If the max_previous exists the set its previous sibling to the next sibling.
+		 * Else move the head up one sibling
+		 */
+    if(max_previous != nullptr) max_previous->sibling = max_node->sibling;
+    else this->head = this->head->sibling;
+
+    T max_data = max_node->data;
+    std::size_t number_of_children = max_node->order;
+
+		//Only re-order the children if there are any.
+    if(number_of_children > 0) {
+      node *children[number_of_children];
+      std::size_t counter = 0;
+      node *max_child = max_node->child;
+
+      delete max_node;
+
+      while(max_child != nullptr) {
+        max_child->parent = nullptr;
+        children[counter++] = max_child;
+        max_child = max_child->sibling;
+      }
+
+      for(std::size_t i = number_of_children - 1; i > 0; i --) {
+        children[i]->sibling = children[i - 1];
+      }
+
+      children[0]->sibling = nullptr;
+
+      this->merge(children[number_of_children - 1]);
+    }
+
+    return max_data;
+  }
+
+	/*
+	 * Prints the entire heap to stdout
+	 */
+  void print() {
+    node * ref = this->head;
+    while(ref != nullptr) {
+      std::cout << ref->priority << ":" << ref->order << std::endl;
+      this->print_tree(ref);
+      ref = ref->sibling;
     }
   }
 
-  std::pair<unsigned int, node *> _make_null_pair() {
-    return std::make_pair(-1, nullptr);
-  }
-
-  node* _merge(node *tree1, node *tree2) {
-    if(tree1->order != tree2->order) return nullptr;
-
-    if(tree1->priority >= tree2->priority) {
-      tree2->sibling = tree1->child;
-      tree1->child = tree2;
-      tree2->parent = tree1;
-      tree1->order++;
-      return tree1;
-    } else {
-      tree1->sibling = tree2->child;
-      tree2->child = tree1;
-      tree1->parent = tree2;
-      tree2->order++;
-      return tree2;
-    }
-  }
-
-  int get_max() {
-    unsigned int max_priority = 0;
-    for(auto &x: this->forest) if(x.second->priority > max_priority) max_priority = x.second->priority;
-    return max_priority;
-  }
-
-	int extract_max(){
-		node * max_node = nullptr;
-		for(auto &x: this->forest){
-			if(max_node == nullptr) max_node = x.second;
-			else if(x.second->priority > max_node->priority) max_node = x.second;
-		}
-
-		int max = max_node->priority;
-
-		std::map<unsigned int, node*> new_map;
-
-		node * child = max_node->child;
-
-		while(child != nullptr){
-			child->parent = nullptr;
-			new_map.insert(std::make_pair(child->order, child));
-			child = child->sibling;
-		}	
-
-		this->forest.erase(max_node->order);
-
-		delete max_node;	
-
-		this->merge(new_map);
-
-		return max;
-
-	}
-
-  void print_trees() {
-    for(auto &x : this->forest) std::cout << x.first << std::endl;
-  }
-
+	/*
+	 * Garbage collects all nodes.
+	 */
   ~binomial_heap() {
-    std::cout << "Delete" << std::endl;
-
-    for(auto &x: this->forest) delete x.second;
+    node *root = this->head;
+    while(root != nullptr) {
+      node *temp = root;
+      this->free_tree(temp);
+      delete temp;
+      root = root->sibling;
+    }
   }
 };
 }

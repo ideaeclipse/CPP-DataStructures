@@ -2,71 +2,34 @@
 
 #include <iostream>
 
-using node = ideaeclipse_utils::binomial_heap::node;
-using binomial_heap = ideaeclipse_utils::binomial_heap;
+using binomial_heap = ideaeclipse_utils::binomial_heap<std::string>;
 
 int main(void) {
-  /*
-  std::map<unsigned int, node*> forest_one;
-
-  for(int i = 0; i < 6; i ++) forest_one.insert(std::make_pair(i, init_node(i, 1)));
-
-  std::map<unsigned int, node*> forest_two;
-
-  forest_two.insert(std::make_pair(0, init_node(0, 1)));
-  //forest_two.insert(std::make_pair(3, init_node(3, 1)));
-
-  binomial_heap heap(forest_two);
-
-  heap.merge(forest_one);
-
-  std::cout << "Trees exist at the following indexes in the heap:" << std::endl;
-
-  for(auto &x: heap.forest) {
-  std::cout << x.first << std::endl;
-  }
-  */
-
   binomial_heap heap;
+  binomial_heap heap_2;
 
   for(int i = 0; i < 100; i ++) {
-    heap.insert(i);
+    heap.insert(std::to_string(i) + ":" + "heap", i);
+    heap_2.insert(std::to_string(i + 1) + ":" + "heap_2", i + 1);
   }
 
-  heap.print_trees();
+	std::cout << "Heap 1" << std::endl;
 
-  std::cout << "max priority: " << heap.extract_max() << std::endl;
+  heap.print();
 
-	heap.print_trees();
+	std::cout << "heap 2" << std::endl;
 
-	std::cout << "max priority: " << heap.get_max() << std::endl;
+	heap_2.print();
 
-	/*
-  int arr[] = {2, 5, 6};
+	heap.merge(heap_2);
 
-  for(int a: arr) {
-    std::cout << a << "'th tree" << std::endl;
-    node * sixth_tree = heap.forest.at(a);
+	std::cout << "union" << std::endl;
+	heap.print();
 
-    while(true) {
-      std::cout << sixth_tree->order << ":" << sixth_tree->priority;
-
-      node *siblings = sixth_tree->sibling;
-
-      while(siblings != nullptr) {
-        std::cout << " " << siblings->order << ":" << siblings->priority;
-        siblings = siblings->sibling;
-      }
-      std::cout << "\n";
-
-      if(sixth_tree->order == 0) break;
-      sixth_tree = sixth_tree->child;
-    }
-
-    std::cout << "\n";
-		
-  }
-	*/
+	for(int i = 0; i < 10; i ++){
+		std::cout << heap.extract_max() << std::endl;
+		//heap.print();
+	}
 
   return 0;
 }
