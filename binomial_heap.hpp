@@ -13,42 +13,42 @@ namespace ideaeclipse_utils {
 template<typename T>
 class binomial_heap {
 private:
-	
-	/*
-	 * Internal data structure for each node within the graph
-	 */
-  struct node {
-    
-		// Priority of the node. Higher the priority the sooner it is released from the heap
-		const unsigned int priority;
 
-		// Data associated with the node. User defined.
+  /*
+   * Internal data structure for each node within the graph
+   */
+  struct node {
+
+    // Priority of the node. Higher the priority the sooner it is released from the heap
+    const unsigned int priority;
+
+    // Data associated with the node. User defined.
     const T data;
 
-		// Degree of the tree. See the definition of a binomial tree for more info.
+    // Degree of the tree. See the definition of a binomial tree for more info.
     unsigned int order;
 
-		// Parent pointer. If a node is a root node this is null.
+    // Parent pointer. If a node is a root node this is null.
     node * parent = nullptr;
 
-		// Child pointer. Points to the left most child.
+    // Child pointer. Points to the left most child.
     node * child = nullptr;
 
-		// Sibling pointer. Points to the child to the right.
+    // Sibling pointer. Points to the child to the right.
     node * sibling = nullptr;
 
-		/*
-		 * @param priority sets the priority.
-		 * @param order sets the default order. Should be 0
-		 */
+    /*
+     * @param priority sets the priority.
+     * @param order sets the default order. Should be 0
+     */
     node(const int priority, const T &data) : priority(priority), data(data), order(0) {}
   };
 
-	/*
-	 * Takes the child node. Loops through all siblings and makes a recursive call.
-	 *
-	 * @param root frees the tree with a root node.
-	 */
+  /*
+   * Takes the child node. Loops through all siblings and makes a recursive call.
+   *
+   * @param root frees the tree with a root node.
+   */
   void free_tree(node *root) {
     node *child = root->child;
     while(child != nullptr) {
@@ -58,11 +58,11 @@ private:
     }
   }
 
-	/*
-	 * Similiar to free_tree but prints the priority and order
-	 *
-	 * @param root root node for the tree
-	 */
+  /*
+   * Similiar to free_tree but prints the priority and order
+   *
+   * @param root root node for the tree
+   */
   void print_tree(node *root) {
     if(root == nullptr) return;
 
@@ -76,12 +76,12 @@ private:
     this->print_tree(ref);
   }
 
-	/*
-	 * Links the trees together.
-	 *
-	 * @param tree1 higher priority tree
-	 * @param tree2 lower priority tree
-	 */
+  /*
+   * Links the trees together.
+   *
+   * @param tree1 higher priority tree
+   * @param tree2 lower priority tree
+   */
   void link(node *tree1, node *tree2) {
     tree2->parent = tree1;
     tree2->sibling = tree1->child;
@@ -89,11 +89,11 @@ private:
     tree1->order++;
   }
 
-	/*
-	 * Merges two heaps.
-	 *
-	 * @param merg heap to merg
-	 */
+  /*
+   * Merges two heaps.
+   *
+   * @param merg heap to merg
+   */
   void merge(node *merge) {
     if(this->head == nullptr) {
       this->head = merge;
@@ -161,7 +161,7 @@ private:
 
         /*
          * This function merges the two trees based on which one has a higher priority
-				 * TODO: explain
+         * TODO: explain
          */
         if(new_heap->priority >= next->priority) {
           new_heap->sibling = next->sibling;
@@ -183,40 +183,40 @@ private:
     this->head = new_heap_root;
   }
 
-	// Head of the heap
+  // Head of the heap
   node *head = nullptr;
 
 public:
 
-	/*
-	 * Merges a singleton node with the heap.
-	 *
-	 * @param data user data
-	 * @param priority priority of that data
-	 */
+  /*
+   * Merges a singleton node with the heap.
+   *
+   * @param data user data
+   * @param priority priority of that data
+   */
   void insert(const T &data, const unsigned int priority = 0) {
     this->merge(new node(priority, data));
   }
 
-	/*
-	 * @param heap heap to merge
-	 */
+  /*
+   * @param heap heap to merge
+   */
   void merge(binomial_heap<T> &heap) {
     this->merge(heap.head);
     heap.head = nullptr;
   }
 
-	/*
-	 * @param heap heap to merge
-	 */
+  /*
+   * @param heap heap to merge
+   */
   void merge(binomial_heap<T> &&heap) {
     this->merge(heap.head);
     heap.head = nullptr;
   }
 
-	/*
-	 * @return max element
-	 */
+  /*
+   * @return max element
+   */
   const T& get_max() {
     node *max = nullptr;
 
@@ -229,11 +229,11 @@ public:
     return max->data;
   }
 
-	/*
-	 * Gets the max data and removes it from the heap.
-	 *
-	 * @return data from the max node
-	 */
+  /*
+   * Gets the max data and removes it from the heap.
+   *
+   * @return data from the max node
+   */
   const T extract_max() {
     node * max_previous = nullptr;
     node * max_node = nullptr;
@@ -241,9 +241,9 @@ public:
     node *ref_previous = nullptr;
     node *ref = this->head;
 
-		/*
-		 * Find the max node and the node before it.
-		 */
+    /*
+     * Find the max node and the node before it.
+     */
     while(ref != nullptr) {
       if(max_node == nullptr || ref->priority > max_node->priority) {
         max_node = ref;
@@ -254,17 +254,17 @@ public:
       ref = ref->sibling;
     }
 
-		/*
-		 * If the max_previous exists the set its previous sibling to the next sibling.
-		 * Else move the head up one sibling
-		 */
+    /*
+     * If the max_previous exists the set its previous sibling to the next sibling.
+     * Else move the head up one sibling
+     */
     if(max_previous != nullptr) max_previous->sibling = max_node->sibling;
     else this->head = this->head->sibling;
 
     T max_data = max_node->data;
     std::size_t number_of_children = max_node->order;
 
-		//Only re-order the children if there are any.
+    //Only re-order the children if there are any.
     if(number_of_children > 0) {
       node *children[number_of_children];
       std::size_t counter = 0;
@@ -290,9 +290,9 @@ public:
     return max_data;
   }
 
-	/*
-	 * Prints the entire heap to stdout
-	 */
+  /*
+   * Prints the entire heap to stdout
+   */
   void print() {
     node * ref = this->head;
     while(ref != nullptr) {
@@ -302,9 +302,9 @@ public:
     }
   }
 
-	/*
-	 * Garbage collects all nodes.
-	 */
+  /*
+   * Garbage collects all nodes.
+   */
   ~binomial_heap() {
     node *root = this->head;
     while(root != nullptr) {
