@@ -8,6 +8,7 @@
 namespace ideaeclipse_utils {
 /*
  * TODO: Dynamic Resizing
+ * TODO: Comments
  *
  * Simple max heap implementation.
  *

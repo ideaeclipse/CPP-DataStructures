@@ -188,12 +188,12 @@ private:
 
 public:
 
-	/*
-	 * @return if head is null then the heap is empty
-	 */
-	bool is_empty(){
-		return this->head == nullptr;
-	}
+  /*
+   * @return if head is null then the heap is empty
+   */
+  bool is_empty() {
+    return this->head == nullptr;
+  }
 
   /*
    * Merges a singleton node with the heap.
