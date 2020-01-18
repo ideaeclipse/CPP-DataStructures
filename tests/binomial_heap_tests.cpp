@@ -13,23 +13,23 @@ int main(void) {
     heap_2.insert(std::to_string(i + 1) + ":" + "heap_2", i + 1);
   }
 
-	std::cout << "Heap 1" << std::endl;
+  std::cout << "Heap 1" << std::endl;
 
   heap.print();
 
-	std::cout << "heap 2" << std::endl;
+  std::cout << "heap 2" << std::endl;
 
-	heap_2.print();
+  heap_2.print();
 
-	heap.merge(heap_2);
+  heap.merge(heap_2);
 
-	std::cout << "union" << std::endl;
-	heap.print();
+  std::cout << "union" << std::endl;
+  heap.print();
 
-	for(int i = 0; i < 10; i ++){
-		std::cout << heap.extract_max() << std::endl;
-		//heap.print();
-	}
+  for(int i = 0; i < 10; i ++) {
+    std::cout << heap.extract_max() << std::endl;
+    //heap.print();
+  }
 
   return 0;
 }
