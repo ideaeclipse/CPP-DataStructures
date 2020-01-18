@@ -26,10 +26,10 @@ int main(void) {
   std::cout << "union" << std::endl;
   heap.print();
 
-  for(int i = 0; i < 10; i ++) {
+  for(int i = 0; i < 200; i ++) {
     std::cout << heap.extract_max() << std::endl;
-    //heap.print();
   }
+	std::cout << heap.is_empty() << std::endl;
 
   return 0;
 }
